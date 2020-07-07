@@ -7,6 +7,8 @@ A simple player vs dealer blackjack game
 from time import sleep
 import random
 
+CARD_RANKS = ('Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+              'Ten', 'Jack', 'Queen', 'King', 'Ace')
 CARD_VALUES = {
     'Two': 2,
     'Three': 3,
@@ -23,12 +25,34 @@ CARD_VALUES = {
     'Ace': 11
 }
 CARD_SUITS = ('Clubs', 'Spades', 'Hearts', 'Diamonds')
-CARD_RANKS = ('Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
-              'Ten', 'Jack', 'Queen', 'King', 'Ace')
+SUIT_SYMBOLS = {'Spades':'\u2660',
+                'Clubs':'\u2663',
+                'Hearts':'\u2661',
+                'Diamonds':'\u2662'}
 
 STARTING_CHIPS = 1000.0
 MINIMUM_BET = 100.0
 
+CARD_IMAGE = ('\u250c'+'\u2500'*9+'\u2510''\n'
+              '\u2502'+'{}'+' '*7+'\u2502''\n'
+              '\u2502'+' '*9+'\u2502''\n'
+              '\u2502'+' '*9+'\u2502''\n'
+              '\u2502'+' '*3+'{}'+' '*4+'\u2502''\n'
+              '\u2502'+' '*9+'\u2502''\n'
+              '\u2502'+' '*9+'\u2502''\n'
+              '\u2502'+' '*7+'{}'+'\u2502''\n'
+              '\u2514'+'\u2500'*9+'\u2518'
+             ).format('{rank: <2}', '{suit: <2}', '{rank: >2}')
+BLANK_CARD_IMAGE = ('\u250c'+'\u2500'*9+'\u2510''\n'
+                    '\u2502'+'\u2591'*9+'\u2502''\n'
+                    '\u2502'+'\u2591'*9+'\u2502''\n'
+                    '\u2502'+'\u2591'*9+'\u2502''\n'
+                    '\u2502'+'\u2591'*9+'\u2502''\n'
+                    '\u2502'+'\u2591'*9+'\u2502''\n'
+                    '\u2502'+'\u2591'*9+'\u2502''\n'
+                    '\u2502'+'\u2591'*9+'\u2502''\n'
+                    '\u2514'+'\u2500'*9+'\u2518'
+                    )
 
 class Hand():
     '''
@@ -99,27 +123,24 @@ class ChipStack():
     def __len__(self):
         return self.chips
 
-
 class Card():
     '''
     Class for each card
     '''
 
     def __init__(self, suit, rank):
-        self.suit = suit
-        self.rank = rank
+        self.suit = suit.capitalize()
+        self.rank = rank.capitalize()
         self.value = CARD_VALUES[rank]
+        if self.rank in ('Jack', 'Queen', 'King', 'Ace'):
+            self.card_char = self.rank[0]
+        else:
+            self.card_char = self.value
+        self.image = CARD_IMAGE.format(rank=self.card_char,
+                                       suit=SUIT_SYMBOLS[self.suit])
 
     def __str__(self):
         return self.rank + " of " + self.suit
-
-    def details(self):
-        '''
-        Print details for the card
-        '''
-        print('{} of {}\n----------------\nSuit:\t{}\nRank\t{}\nValue\t{}\n'.
-              format(self.rank, self.suit, self.suit, self.rank, self.value))
-
 
 class Deck():
     '''
@@ -154,6 +175,30 @@ class Deck():
         '''
         return self.all_cards.pop()
 
+def join_lines(strings):
+    '''
+    Takes a series of items cards printed individually and prints
+    them together horizontally.
+    e.g.
+    [],[],[]
+    becomes:
+    [][][]
+    '''
+    liness = [string.splitlines() for string in strings]
+    return '\n'.join(''.join(lines) for lines in zip(*liness))
+
+def hand_image(hand, hidden_cards=0):
+    '''
+    Prints image of a hand horizontally
+    :param hand: the specific Hand class object to be displayed
+    :param hidden_cards: how many of the cards should be hidden (default 0)
+    '''
+    images = []
+    for _ in range(0, hidden_cards):
+        images.append(BLANK_CARD_IMAGE)
+    for card in hand.hand[hidden_cards:]:
+        images.append(card.image)
+    return join_lines(images)
 
 def display_board(dealer_hand, player_hand, bet, chipstack, hidden=0):
     '''
@@ -162,11 +207,9 @@ def display_board(dealer_hand, player_hand, bet, chipstack, hidden=0):
     pline = '-' * 30
     print('\033c')  # clear the screen
     print('Dealer Hand\n{}'.format(pline))
-    for _ in range(hidden):
-        print('????? of ??????')
+    print(hand_image(dealer_hand, hidden))
     dealer_total = 0
     for card in dealer_hand.hand[hidden:]:
-        print(card)
         dealer_total += card.value
     if hidden > 0:
         print('Dealer Total: {}?'.format(dealer_total))
@@ -174,8 +217,7 @@ def display_board(dealer_hand, player_hand, bet, chipstack, hidden=0):
         print('Dealer Total: {}'.format(dealer_hand.total()))
     print('\n\n')
     print('Player Hand\n{}'.format(pline))
-    for card in player_hand.hand:
-        print(card)
+    print(hand_image(player_hand))
     print('Player Total: {}'.format(player_hand.total()))
     print('\n{}'.format(pline))
     print('Current bet:     {:>5}{}'.format('$', bet))
@@ -207,13 +249,15 @@ if __name__ == '__main__':
         while BET < MINIMUM_BET:
             BET = MINIMUM_BET
             try:
-                BET = input('Bank roll:  ${}\nMinimum Bet:  ${}.\nPress enter to bet the minimum or enter a number to raise the bet. '
-                                  .format(CHIPS.chips,MINIMUM_BET))
+                BET = input('Bank roll:  ${}\n'
+                            'Minimum Bet:  ${}.\n'
+                            'Press enter to bet the minimum or enter a number to raise the bet. '
+                            .format(CHIPS.chips, MINIMUM_BET))
                 if BET == '':
                     BET = MINIMUM_BET
                 else:
                     BET = float(BET)
-            except:
+            except ValueError:
                 print('{} is not a valid bet.  Must be a number.'.format(BET))
                 BET = 0
             if BET > CHIPS.chips:
