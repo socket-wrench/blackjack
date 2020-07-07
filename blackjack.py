@@ -7,25 +7,34 @@ A simple player vs dealer blackjack game
 from time import sleep
 import random
 
-CARD_VALUES = {'Two':2, 'Three':3, 'Four':4,
-               'Five':5, 'Six':6, 'Seven':7, 'Eight':8,
-               'Nine':9, 'Ten':10, 'Jack':10, 'Queen':10,
-               'King':10, 'Ace':11
-              }
+CARD_VALUES = {
+    'Two': 2,
+    'Three': 3,
+    'Four': 4,
+    'Five': 5,
+    'Six': 6,
+    'Seven': 7,
+    'Eight': 8,
+    'Nine': 9,
+    'Ten': 10,
+    'Jack': 10,
+    'Queen': 10,
+    'King': 10,
+    'Ace': 11
+}
 CARD_SUITS = ('Clubs', 'Spades', 'Hearts', 'Diamonds')
-CARD_RANKS = ('Two', 'Three', 'Four', 'Five',
-              'Six', 'Seven', 'Eight', 'Nine', 'Ten',
-              'Jack', 'Queen', 'King', 'Ace'
-             )
+CARD_RANKS = ('Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+              'Ten', 'Jack', 'Queen', 'King', 'Ace')
 
-STARTING_CHIPS = 500
-MINIMUM_BET = 5
+STARTING_CHIPS = 1000.0
+MINIMUM_BET = 100.0
 
 
 class Hand():
     '''
     The current hand for player
     '''
+
     def __init__(self):
         self.hand = []
 
@@ -63,10 +72,12 @@ class Hand():
             print(card)
         print('Total: {}'.format(self.total()))
 
+
 class ChipStack():
     '''
     Stack of chips
     '''
+
     def __init__(self, chips):
         self.chips = chips
 
@@ -88,29 +99,33 @@ class ChipStack():
     def __len__(self):
         return self.chips
 
+
 class Card():
     '''
     Class for each card
     '''
+
     def __init__(self, suit, rank):
         self.suit = suit
         self.rank = rank
         self.value = CARD_VALUES[rank]
+
     def __str__(self):
         return self.rank + " of " + self.suit
+
     def details(self):
         '''
         Print details for the card
         '''
-        print('{} of {}\n----------------\nSuit:\t{}\nRank\t{}\nValue\t{}\n'
-              .format(self.rank, self.suit, self.suit, self.rank, self.value)
-             )
+        print('{} of {}\n----------------\nSuit:\t{}\nRank\t{}\nValue\t{}\n'.
+              format(self.rank, self.suit, self.suit, self.rank, self.value))
 
 
 class Deck():
     '''
     Class for the deck of cards
     '''
+
     def __init__(self):
         self.all_cards = []
         for suit in CARD_SUITS:
@@ -120,6 +135,12 @@ class Deck():
 
     def __len__(self):
         return len(self.all_cards)
+
+    def __str__(self):
+        deck_comp = ''
+        for card in self.all_cards:
+            deck_comp += '\n  ' + card.__str__()
+        return 'The deck has:' + deck_comp
 
     def shuffle(self):
         '''
@@ -133,12 +154,13 @@ class Deck():
         '''
         return self.all_cards.pop()
 
+
 def display_board(dealer_hand, player_hand, bet, chipstack, hidden=0):
     '''
     Display the current hands and current bets with a number of cards of dealers hand hidden
     '''
-    pline = '-'*30
-    print('\033c') #clear the screen
+    pline = '-' * 30
+    print('\033c')  # clear the screen
     print('Dealer Hand\n{}'.format(pline))
     for _ in range(hidden):
         print('????? of ??????')
@@ -156,10 +178,9 @@ def display_board(dealer_hand, player_hand, bet, chipstack, hidden=0):
         print(card)
     print('Player Total: {}'.format(player_hand.total()))
     print('\n{}'.format(pline))
-    print('Current bet: ${:>30}'.format(bet))
-    print('Chips Remaining: ${:>30}'.format(chipstack.chips - bet))
+    print('Current bet:     {:>5}{}'.format('$', bet))
+    print('Chips Remaining: {:>5}{}'.format('$', chipstack.chips - bet))
     print('{}\n'.format(pline))
-
 
 
 if __name__ == '__main__':
@@ -177,18 +198,29 @@ if __name__ == '__main__':
         # If player chipstack < minimum bet, exit game
         if CHIPS.chips < MINIMUM_BET:
             PLAYING = False
-            print('I am sorry, you do not have enough chips to continue.  Goodbye.')
+            print(
+                'I am sorry, you do not have enough chips to continue.  Goodbye.'
+            )
             break
         # Player places bet or quits
         BET = 0
         while BET < MINIMUM_BET:
             BET = MINIMUM_BET
             try:
-                BET = float(input('Place your bet! (minimum {}) '.format(MINIMUM_BET)))
+                BET = input('Bank roll:  ${}\nMinimum Bet:  ${}.\nPress enter to bet the minimum or enter a number to raise the bet. '
+                                  .format(CHIPS.chips,MINIMUM_BET))
+                if BET == '':
+                    BET = MINIMUM_BET
+                else:
+                    BET = float(BET)
             except:
-                print('')
-            else:
-                BET = MINIMUM_BET
+                print('{} is not a valid bet.  Must be a number.'.format(BET))
+                BET = 0
+            if BET > CHIPS.chips:
+                print('You have bet more than you have,')
+                print('please bet beneath your current bank roll of ${}'
+                      .format(CHIPS.chips))
+                BET = 0
         # Shuffle Deck
         if len(DECK) < 16:
             DECK = Deck()
@@ -238,17 +270,17 @@ if __name__ == '__main__':
                     PLAYER_BUST = True
                     break
                 # Player option: fold, stay, hit, double-down?, split?
-                PLAYER_OPTIONS = ['fold', 'stay', 'hit']
+                PLAYER_OPTIONS = ('s', 'h')
                 SELECTION = ''
-                while SELECTION not in PLAYER_OPTIONS:
+                while SELECTION.lower() not in PLAYER_OPTIONS:
                     display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 1)
-                    SELECTION = (input('What would you like to do? {} '.format(PLAYER_OPTIONS)))
+                    SELECTION = (input('What would you like to do? [s]tay or [h]it '))
                 # If stay, break Player Choice while loop
-                if SELECTION == 'stay':
+                if SELECTION == 's':
                     PLAYER_STAY = True
                     break
                 # If hit, add card to hand and continue
-                if SELECTION == 'hit':
+                if SELECTION == 'h':
                     PLAYER_HAND.recv_card(DECK.deal())
                     display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 1)
                     sleep(1)
@@ -278,26 +310,26 @@ if __name__ == '__main__':
                 # elif dealer hand == player_hand, push, no chipstack change
                 elif DEALER_HAND.total() == PLAYER_HAND.total():
                     display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
-                    print('Both dealer and player scored {}.  Push!'.format(DEALER_HAND.total()))
+                    print('Both dealer and player scored {}.  Push!'.format(
+                        DEALER_HAND.total()))
                 # elif dealer hand > player hand, dealer wins, remove bet from chipstack
                 elif DEALER_HAND.total() > PLAYER_HAND.total():
                     display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
-                    print('Dealer\'s {} beats player\'s {}.\nDealer wins. You lose ${}.'
-                          .format(DEALER_HAND.total(),
-                                  PLAYER_HAND.total(),
-                                  BET)
-                         )
+                    print(
+                        'Dealer\'s {} beats player\'s {}.\nDealer wins. You lose ${}.'
+                        .format(DEALER_HAND.total(), PLAYER_HAND.total(), BET))
+                    CHIPS.rem_chips(BET)
                 # elif player hand > dealer hand, player wins, add bet to chipstack
                 elif DEALER_HAND.total() < PLAYER_HAND.total():
                     display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
-                    print('Player\'s {} beats dealer\'s {}!!!\n Player wins ${}!'
-                          .format(PLAYER_HAND.total(),
-                                  DEALER_HAND.total(),
-                                  BET)
-                         )
+                    print(
+                        'Player\'s {} beats dealer\'s {}!!!\n Player wins ${}!'
+                        .format(PLAYER_HAND.total(), DEALER_HAND.total(), BET))
+                    CHIPS.add_chips(BET)
         # Check if player wants to continue playing.
+        display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
         CONFIRM_CONTINUE = input('Keep playing? [y/n] ')
-        if CONFIRM_CONTINUE == 'n':
+        if CONFIRM_CONTINUE.lower() == 'n':
             PLAYING = False
             print('You walked away with ${}.  Goodbye!'.format(CHIPS.chips))
     print('Quitting...')
