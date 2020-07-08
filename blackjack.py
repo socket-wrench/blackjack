@@ -7,6 +7,8 @@ A simple player vs dealer blackjack game
 from time import sleep
 import random
 
+GAME_DELAY = 0.5
+
 CARD_RANKS = ('Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
               'Ten', 'Jack', 'Queen', 'King', 'Ace')
 CARD_VALUES = {
@@ -233,7 +235,7 @@ if __name__ == '__main__':
     DECK = Deck()
     DECK.shuffle()
     print('Dealer is shuffling the deck...')
-    sleep(3)
+    sleep(3 * GAME_DELAY)
     # Main while loop
     PLAYING = True
     while PLAYING:
@@ -270,40 +272,43 @@ if __name__ == '__main__':
             DECK = Deck()
             DECK.shuffle()
             print('Dealer is shuffling the deck...')
-            sleep(3)
+            sleep(3 * GAME_DELAY)
         # Deal hands
         DEALER_HAND = Hand()
         PLAYER_HAND = Hand()
         PLAYER_HAND.recv_card(DECK.deal())
         display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 2)
-        sleep(1)
+        sleep(GAME_DELAY)
         DEALER_HAND.recv_card(DECK.deal())
         display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 2)
-        sleep(1)
+        sleep(GAME_DELAY)
         PLAYER_HAND.recv_card(DECK.deal())
         display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 2)
-        sleep(1)
+        sleep(GAME_DELAY)
         DEALER_HAND.recv_card(DECK.deal())
         display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 2)
-        sleep(1)
+        sleep(GAME_DELAY)
         # Display both cards in dealer hand and player hand
         display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 1)
-        sleep(1)
+        sleep(GAME_DELAY)
 
         # If dealer and player both have 21, push and break Round loop
         if DEALER_HAND.total() == PLAYER_HAND.total() == 21:
-            display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
+            display_board(DEALER_HAND, PLAYER_HAND, 0.0, CHIPS, 0)
             print('Both dealer and player start with blackjack.  PUSH!')
+            sleep(2 * GAME_DELAY)
         # If dealer has 21 and player doesn't, dealer wins and break Round loop
         elif DEALER_HAND.total() == 21:
-            display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
-            print('Dealer got Black Jack.  Sorry. You lost ${}'.format(BET))
             CHIPS.rem_chips(BET)
+            display_board(DEALER_HAND, PLAYER_HAND, 0.0, CHIPS, 0)
+            print('Dealer got Black Jack.  Sorry. You lost ${}'.format(BET))
+            sleep(2 * GAME_DELAY)
         # If HAND.total() == 21, player wins, and BLACKJACK
         elif PLAYER_HAND.total() == 21:
-            display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
-            print('Player got a Black Jack!! You win ${}!'.format(BET * 3 / 2))
             CHIPS.add_chips(BET * 3 / 2)
+            display_board(DEALER_HAND, PLAYER_HAND, 0.0, CHIPS, 0)
+            print('Player got a Black Jack!! You win ${}!'.format(BET * 3 / 2))
+            sleep(2 * GAME_DELAY)
         else:
             # Player Choice while loop
             PLAYER_BUST = False
@@ -313,12 +318,19 @@ if __name__ == '__main__':
                 if PLAYER_HAND.total() > 21:
                     PLAYER_BUST = True
                     break
-                # Player option: fold, stay, hit, double-down?, split?
-                PLAYER_OPTIONS = ('s', 'h')
+                # Player option: fold, stay, hit, double-down, split?
                 SELECTION = ''
-                while SELECTION.lower() not in PLAYER_OPTIONS:
-                    display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 1)
-                    SELECTION = (input('What would you like to do? [s]tay or [h]it '))
+                if len(PLAYER_HAND.hand) == 2 and CHIPS.chips >= BET * 2:
+                    PLAYER_OPTIONS = ('s', 'h', 'd')
+                    while SELECTION.lower() not in PLAYER_OPTIONS:
+                        display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 1)
+                        SELECTION = (input('What would you like to do? \n'
+                                           '[s]tay, [h]it, or [d]ouble-down '))
+                else:
+                    PLAYER_OPTIONS = ('s', 'h')
+                    while SELECTION.lower() not in PLAYER_OPTIONS:
+                        display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 1)
+                        SELECTION = (input('What would you like to do? [s]tay or [h]it '))
                 # If stay, break Player Choice while loop
                 if SELECTION == 's':
                     PLAYER_STAY = True
@@ -327,8 +339,14 @@ if __name__ == '__main__':
                 if SELECTION == 'h':
                     PLAYER_HAND.recv_card(DECK.deal())
                     display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 1)
-                    sleep(1)
-                # TODO If double-down, double bet and hit once, then break Player Choice while loop
+                    sleep(GAME_DELAY)
+                if SELECTION == 'd':
+                    PLAYER_HAND.recv_card(DECK.deal())
+                    BET += BET
+                    display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 1)
+                    sleep(GAME_DELAY)
+                    PLAYER_STAY = True
+                    break
                 # TODO Split
             # If player busted remove bet from chipstack
             if PLAYER_BUST:
@@ -338,40 +356,40 @@ if __name__ == '__main__':
             else:
                 # Dealer while loop, only initiate if player not busted out
                 display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
-                sleep(1)
+                sleep(GAME_DELAY)
                 while DEALER_HAND.total() < 17:
                     # If dealer hand > 21, dealer busts, player wins, break Dealer loop
                     # If dealer hand >= 17, dealer stays, break Dealer loop
                     # If dealer hand < 17, dealer hits
                     DEALER_HAND.recv_card(DECK.deal())
                     display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
-                    sleep(1)
+                    sleep(GAME_DELAY)
                 # if dealer busted add bet to chipstack
                 if DEALER_HAND.total() > 21:
-                    display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
-                    print('Dealer busts.  You win ${}!'.format(BET))
                     CHIPS.add_chips(BET)
+                    display_board(DEALER_HAND, PLAYER_HAND, 0, CHIPS, 0)
+                    print('Dealer busts.  You win ${}!'.format(BET))
                 # elif dealer hand == player_hand, push, no chipstack change
                 elif DEALER_HAND.total() == PLAYER_HAND.total():
-                    display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
+                    display_board(DEALER_HAND, PLAYER_HAND, 0, CHIPS, 0)
                     print('Both dealer and player scored {}.  Push!'.format(
                         DEALER_HAND.total()))
                 # elif dealer hand > player hand, dealer wins, remove bet from chipstack
                 elif DEALER_HAND.total() > PLAYER_HAND.total():
-                    display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
+                    CHIPS.rem_chips(BET)
+                    display_board(DEALER_HAND, PLAYER_HAND, 0, CHIPS, 0)
                     print(
                         'Dealer\'s {} beats player\'s {}.\nDealer wins. You lose ${}.'
                         .format(DEALER_HAND.total(), PLAYER_HAND.total(), BET))
-                    CHIPS.rem_chips(BET)
                 # elif player hand > dealer hand, player wins, add bet to chipstack
                 elif DEALER_HAND.total() < PLAYER_HAND.total():
-                    display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
+                    CHIPS.add_chips(BET)
+                    display_board(DEALER_HAND, PLAYER_HAND, 0, CHIPS, 0)
                     print(
                         'Player\'s {} beats dealer\'s {}!!!\n Player wins ${}!'
                         .format(PLAYER_HAND.total(), DEALER_HAND.total(), BET))
-                    CHIPS.add_chips(BET)
         # Check if player wants to continue playing.
-        display_board(DEALER_HAND, PLAYER_HAND, BET, CHIPS, 0)
+        display_board(DEALER_HAND, PLAYER_HAND, 0, CHIPS, 0)
         CONFIRM_CONTINUE = input('Keep playing? [y/n] ')
         if CONFIRM_CONTINUE.lower() == 'n':
             PLAYING = False
