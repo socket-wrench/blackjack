@@ -390,7 +390,10 @@ if __name__ == '__main__':
                         .format(PLAYER_HAND.total(), DEALER_HAND.total(), BET))
         # Check if player wants to continue playing.
         display_board(DEALER_HAND, PLAYER_HAND, 0, CHIPS, 0)
-        CONFIRM_CONTINUE = input('Keep playing? [y/n] ')
+        if CHIPS.chips >= MINIMUM_BET:
+            CONFIRM_CONTINUE = input('Keep playing? [y/n] ')
+        else:
+            CONFIRM_CONTINUE = 'y'
         if CONFIRM_CONTINUE.lower() == 'n':
             PLAYING = False
             print('You walked away with ${}.  Goodbye!'.format(CHIPS.chips))
